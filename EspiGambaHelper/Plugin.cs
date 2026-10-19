@@ -39,7 +39,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly WindowSystem windows = new("EspiGambaHelper");
     private readonly MainWindow window;
     private readonly ScratchIpc scratch;
-    private readonly List<(GameRequest Request, Task<string> Task, long? TellTicket)> pending = [];
+    private readonly GameCreationQueue creations = new();
     private readonly TellQueue tells = new();
     private readonly AsyncTellDispatcher tellDispatcher;
     private bool disposed;
@@ -93,6 +93,7 @@ public sealed class Plugin : IDalamudPlugin
         if (tellOwnerContentId == current) return;
         tellOwnerContentId = current;
         tells.Cancel();
+        creations.CancelWaiting();
     }
 
     internal void RefreshChoices()
@@ -117,6 +118,7 @@ public sealed class Plugin : IDalamudPlugin
         {
             Session.Disable();
             tells.Cancel();
+            creations.CancelWaiting();
             Log.Information("Scratch disabled.");
             return;
         }
@@ -199,14 +201,9 @@ public sealed class Plugin : IDalamudPlugin
             if (request == null) { RollStatus($"Ignored roll: {player.Name} already entered this round."); return; }
             try
             {
-                RollStatus($"Creating {request.CardCount} cards for {player.Name} (roll {roll.Result}).");
+                RollStatus($"Queued {request.CardCount} cards for {player.Name} (roll {roll.Result}).");
                 SyncTellOwner();
-                var tellTicket = tells.CaptureTicket();
-                var start = Stopwatch.GetTimestamp();
-                Task<string> task;
-                try { task = scratch.Create(request) ?? throw new InvalidOperationException("SimpleScratch returned no task."); }
-                finally { LogSlowCall("SimpleScratch CreatePlayerIPC initial invocation", start); }
-                pending.Add((request, task, tellTicket));
+                creations.Enqueue(request, tells.CaptureTicket());
             }
             catch (Exception ex) { Failed(request, ex); }
         }
@@ -225,13 +222,12 @@ public sealed class Plugin : IDalamudPlugin
 
     private void OnUpdate(IFramework framework)
     {
+        if (disposed) return;
         SyncTellOwner();
         // Observe completed requests on the game thread. No background continuation mutates UI state.
-        for (var i = pending.Count - 1; i >= 0; i--)
+        if (creations.TakeCompleted() is { } completed)
         {
-            var (request, task, tellTicket) = pending[i];
-            if (!task.IsCompleted) continue;
-            pending.RemoveAt(i);
+            var (request, tellTicket, task) = completed;
             try
             {
                 var result = task.GetAwaiter().GetResult();
@@ -255,8 +251,19 @@ public sealed class Plugin : IDalamudPlugin
             catch (Exception ex) { Failed(request, ex); }
         }
 
+        if (PlayerState.IsLoaded && Session.Enabled)
+            creations.StartNext(CreateGame);
+
         if (PlayerState.IsLoaded && Session.Enabled && tells.Count > 0)
             tellDispatcher.RequestSend();
+    }
+
+    private Task<string> CreateGame(GameRequest request)
+    {
+        RollStatus($"Creating {request.CardCount} cards for {request.Player.Name}.");
+        var start = Stopwatch.GetTimestamp();
+        try { return scratch.Create(request); }
+        finally { LogSlowCall("SimpleScratch CreatePlayerIPC initial invocation", start); }
     }
 
     private void DispatchOneTell()
@@ -316,11 +323,7 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenConfigUi -= OpenWindow;
         CommandManager.RemoveHandler("/espigamba");
         windows.RemoveAllWindows();
-        // Calls already accepted by SimpleScratch cannot be cancelled. Observe faults after unload.
-        foreach (var (_, task, _) in pending)
-            _ = task.ContinueWith(t => { _ = t.Exception; }, CancellationToken.None,
-                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
-        pending.Clear();
+        creations.Dispose();
         ECommonsMain.Dispose();
     }
 }

@@ -26,12 +26,18 @@ public sealed class VipTests
         Assert.Equal("Theme", request.Settings.ThemeName);
     }
 
-    [Fact]
-    public void NonVipStillReceivesFiveCards()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(4)]
+    [InlineData(5)]
+    [InlineData(9)]
+    [InlineData(10)]
+    public void NonVipReceivesTheirRollWithoutTheVipBonus(int rollResult)
     {
         var session = new ActivationSession();
         session.Enable(Settings);
-        Assert.Equal(5, session.TryEnter(Alice, 10, 9, isVip: false)!.CardCount);
+        Assert.Equal(rollResult, session.TryEnter(Alice, 10, rollResult, isVip: false)!.CardCount);
     }
 
     [Fact]
@@ -87,7 +93,7 @@ public sealed class VipTests
         session.Enable(Settings);
         vips.RemoveAt(0);
         Assert.False(VipList.Contains(vips, Alice));
-        Assert.Equal(5, session.TryEnter(Alice, 10, 9, VipList.Contains(vips, Alice))!.CardCount);
+        Assert.Equal(9, session.TryEnter(Alice, 10, 9, VipList.Contains(vips, Alice))!.CardCount);
     }
 
     [Theory]

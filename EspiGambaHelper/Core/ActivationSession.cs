@@ -36,7 +36,7 @@ public sealed class ActivationSession
         if (settings == null || settings.DiceMaximum != diceMaximum
             || rollResult < 0 || rollResult > diceMaximum || !entered.Add(player.Key))
             return null;
-        return new GameRequest(activation, player, settings, isVip ? rollResult + settings.VipBonus : 5);
+        return new GameRequest(activation, player, settings, rollResult + (isVip ? settings.VipBonus : 0));
     }
 
     public void Complete(GameRequest request, bool success, string status)

@@ -62,7 +62,7 @@ internal sealed class MainWindow : Window
             plugin.Configuration.VipBonus = bonus;
             plugin.Save();
         }
-        ImGui.TextWrapped("VIP cards = roll result + bonus.");
+        ImGui.TextWrapped("Cards = roll result. VIP cards = roll result + bonus.");
         if (Select("Preset", plugin.Configuration.PresetName, plugin.Presets, false, out var preset))
         {
             plugin.Configuration.PresetName = preset;

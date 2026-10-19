@@ -25,7 +25,7 @@ public sealed class BehaviorTests
     }
 
     [Theory]
-    [InlineData(false, 5)]
+    [InlineData(false, 3)]
     [InlineData(true, 8)]
     public void FriendDiceMessageResolvesSenderAndCreatesOneRequest(bool vip, int expectedCards)
     {

@@ -1,0 +1,14 @@
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+  <PropertyGroup>
+    <Version>0.1.3.0</Version>
+    <Author>Raya Serahill</Author>
+    <Name>EspiGamba Helper</Name>
+    <Punchline>Create SimpleScratch games from party and alliance dice rolls.</Punchline>
+    <Description>A plugin that contains simpple functions to help Espi Gamba Dealers</Description>
+    <Tags>party;alliance;dice;scratch</Tags>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="ECommons" Version="3.2.1.17" />
+  </ItemGroup>
+</Project>

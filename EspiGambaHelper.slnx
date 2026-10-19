@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="EspiGambaHelper/EspiGambaHelper.csproj" />
+  <Project Path="EspiGambaHelper.Tests/EspiGambaHelper.Tests.csproj" />
+</Solution>

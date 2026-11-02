@@ -53,6 +53,25 @@ public sealed class TellQueueTests
     }
 
     [Fact]
+    public void TellQueuedAfterQueueDrainedStillWaitsFullIntervalSinceLastSend()
+    {
+        var clock = new TestClock();
+        var queue = new TellQueue(clock);
+        queue.SetEnabled(true);
+        queue.Enqueue(queue.CaptureTicket(), Alice, Url);
+        Assert.NotNull(queue.TakeNext());
+        Assert.Equal(0, queue.Count);
+        // The queue sits empty for a while, then a new game completes.
+        clock.Advance(300);
+        queue.Enqueue(queue.CaptureTicket(), Alice with { Name = "Bob Example" }, Url);
+        Assert.Null(queue.TakeNext());
+        clock.Advance(699);
+        Assert.Null(queue.TakeNext());
+        clock.Advance(1);
+        Assert.NotNull(queue.TakeNext());
+    }
+
+    [Fact]
     public void DisablingDropsQueueAndRejectsLateCompletionsEvenAfterReenable()
     {
         var queue = new TellQueue(new TestClock());

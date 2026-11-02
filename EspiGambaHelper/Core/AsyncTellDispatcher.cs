@@ -51,7 +51,7 @@ public sealed class AsyncTellDispatcher : IDisposable
                 catch (OperationCanceledException) when (token.IsCancellationRequested) { break; }
                 catch (Exception ex) { reportError(ex); }
                 // Start the cooldown after the previous send finishes, even if it failed.
-                await delay(TimeSpan.FromMilliseconds(800), token).ConfigureAwait(false);
+                await delay(TellQueue.SendInterval, token).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }

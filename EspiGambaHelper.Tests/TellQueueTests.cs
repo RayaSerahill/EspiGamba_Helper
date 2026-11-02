@@ -17,7 +17,7 @@ public sealed class TellQueueTests
     }
 
     [Fact]
-    public void TwelveSimultaneousCreationsSendOneEveryEightHundredMilliseconds()
+    public void TwelveSimultaneousCreationsSendOneEverySecond()
     {
         var clock = new TestClock();
         var queue = new TellQueue(clock);
@@ -30,7 +30,7 @@ public sealed class TellQueueTests
             Assert.Equal($"/tell Player Member{(char)('a' + i)}@Ravana https://scratch.example/{i}", next.Command);
             Assert.Equal(11 - i, queue.Count);
             Assert.Null(queue.TakeNext());
-            clock.Advance(799);
+            clock.Advance(999);
             Assert.Null(queue.TakeNext());
             clock.Advance(1);
         }
@@ -48,7 +48,7 @@ public sealed class TellQueueTests
         clock.Advance(10000);
         Assert.NotNull(queue.TakeNext());
         Assert.Null(queue.TakeNext());
-        clock.Advance(800);
+        clock.Advance(1000);
         Assert.NotNull(queue.TakeNext());
     }
 
@@ -96,7 +96,7 @@ public sealed class TellQueueTests
         Assert.False(queue.Enqueue(oldTicket, Alice, Url));
         queue.Enqueue(queue.CaptureTicket(), Alice, Url);
         Assert.Null(queue.TakeNext());
-        clock.Advance(800);
+        clock.Advance(1000);
         Assert.NotNull(queue.TakeNext());
     }
 

@@ -4,9 +4,16 @@ namespace EspiGambaHelper.Core;
 
 public sealed record QueuedTell(PlayerIdentity Player, string Command);
 
-/// <summary>Game-thread-only queue; one send attempt per 800 ms, with no catch-up bursts.</summary>
+/// <summary>Game-thread-only queue; one send attempt per <see cref="SendInterval"/>, with no catch-up bursts.</summary>
 public sealed class TellQueue(TimeProvider? clock = null)
 {
+    /// <summary>
+    /// Minimum spacing between tells. The game drops chat sent too quickly with
+    /// "Your message was not heard. You must wait before using /tell, /say, /yell, or /shout again."
+    /// (LogMessage 749); the exact server cooldown is undocumented, so this is a conservative value.
+    /// </summary>
+    public static readonly TimeSpan SendInterval = TimeSpan.FromMilliseconds(1000);
+
     private readonly TimeProvider clock = clock ?? TimeProvider.System;
     private readonly Queue<QueuedTell> messages = new();
     private long generation;
@@ -51,7 +58,7 @@ public sealed class TellQueue(TimeProvider? clock = null)
     {
         if (!Enabled || messages.Count == 0) return null;
         var now = clock.GetTimestamp();
-        if (lastSend is { } last && clock.GetElapsedTime(last, now) < TimeSpan.FromMilliseconds(800)) return null;
+        if (lastSend is { } last && clock.GetElapsedTime(last, now) < SendInterval) return null;
         lastSend = now;
         return messages.Dequeue();
     }

@@ -34,7 +34,8 @@ public sealed class AsyncTellDispatcherTests
         Assert.False(delays.Reader.TryRead(out _));
         first.SetResult();
         var cooldown = await delays.Reader.ReadAsync().AsTask().WaitAsync(Timeout);
-        Assert.Equal(TimeSpan.FromMilliseconds(800), cooldown.Duration);
+        Assert.Equal(TellQueue.SendInterval, cooldown.Duration);
+        Assert.Equal(TimeSpan.FromMilliseconds(1000), cooldown.Duration);
         Assert.False(sends.Reader.TryRead(out _));
         cooldown.Gate.SetResult();
         var second = await sends.Reader.ReadAsync().AsTask().WaitAsync(Timeout);

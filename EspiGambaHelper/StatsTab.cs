@@ -56,7 +56,7 @@ internal sealed class StatsTab(Plugin plugin)
         }
         if (summary == null) return;
         if (stats.Character is { } character)
-            ImGui.TextDisabled($"Scratch and wheel games hosted by {character}; every blackjack round.");
+            ImGui.TextDisabled($"Scratch and wheel games hosted by {character}, plus every blackjack round.");
         else
         {
             ImGui.PushStyleColor(ImGuiCol.Text, Warning);
@@ -76,7 +76,7 @@ internal sealed class StatsTab(Plugin plugin)
         ImGui.BeginDisabled(stats.Importing);
         if (ImGui.Button(stats.Importing ? "Importing..." : "Import from plugins")) stats.StartImport();
         ImGui.EndDisabled();
-        ImGui.TextWrapped("Import adds the games archived in SimpleBlackjack, SimpleScratch and SimpleWheel; games already recorded are skipped.");
+        ImGui.TextWrapped("Import adds the games archived in SimpleBlackjack, SimpleScratch and SimpleWheel. Games already recorded are skipped.");
         if (stats.LastImportStatus is { } importStatus) ImGui.TextWrapped(importStatus);
     }
 
@@ -108,7 +108,7 @@ internal sealed class StatsTab(Plugin plugin)
         if (range.Preset != RangePreset.Custom)
         {
             ImGui.SameLine();
-            ImGui.TextDisabled("(follows the clock; edit either to fix the range)");
+            ImGui.TextDisabled("(follows the clock, edit either to fix the range)");
         }
     }
 

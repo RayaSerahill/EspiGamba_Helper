@@ -42,6 +42,7 @@ public sealed class Plugin : IDalamudPlugin
     private readonly GameCreationQueue creations = new();
     private readonly TellQueue tells = new();
     private readonly AsyncTellDispatcher tellDispatcher;
+    private readonly StatsRecorder? stats;
     private bool disposed;
     private ulong tellOwnerContentId;
 
@@ -54,6 +55,8 @@ public sealed class Plugin : IDalamudPlugin
     internal string? LastRollStatus { get; private set; }
     internal int QueuedTellCount => tells.Count;
     internal string? LastTellStatus { get; private set; }
+    internal StatsRecorder? Stats => stats;
+    internal string? StatsError { get; private set; }
 
     public Plugin(IDalamudPluginInterface pluginInterface)
     {
@@ -63,6 +66,16 @@ public sealed class Plugin : IDalamudPlugin
         tells.SetEnabled(Configuration.SendTellsAutomatically);
         SyncTellOwner();
         scratch = new ScratchIpc();
+        try
+        {
+            stats = new StatsRecorder(Path.Combine(PluginInterface.GetPluginConfigDirectory(), "stats.db"), scratch, Configuration.RecordLiveStats);
+        }
+        catch (Exception ex)
+        {
+            // The rest of the plugin keeps working without stats; the Stats tab shows this message.
+            StatsError = "Could not open the stats database. See /xllog for the error.";
+            Log.Error(ex, "Could not open the stats database");
+        }
         tellDispatcher = new AsyncTellDispatcher(
             token => Framework.RunOnTick(DispatchOneTell, delayTicks: 1, cancellationToken: token),
             ex => Log.Error(ex, "Could not schedule the next game URL tell"));
@@ -87,9 +100,18 @@ public sealed class Plugin : IDalamudPlugin
         Save();
     }
 
+    internal void SetLiveStats(bool enabled)
+    {
+        Configuration.RecordLiveStats = enabled;
+        stats?.SetLiveEnabled(enabled);
+        Save();
+    }
+
     private void SyncTellOwner()
     {
         var current = PlayerState.IsLoaded ? PlayerState.ContentId : 0;
+        if (stats != null && (tellOwnerContentId != current || (stats.Character == null && current != 0)))
+            stats.SetCharacter(current == 0 ? null : PlayerState.CharacterName);
         if (tellOwnerContentId == current) return;
         tellOwnerContentId = current;
         tells.Cancel();
@@ -324,6 +346,7 @@ public sealed class Plugin : IDalamudPlugin
         CommandManager.RemoveHandler("/espigamba");
         windows.RemoveAllWindows();
         creations.Dispose();
+        stats?.Dispose();
         ECommonsMain.Dispose();
     }
 }

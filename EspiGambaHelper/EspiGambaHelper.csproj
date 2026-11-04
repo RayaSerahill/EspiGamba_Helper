@@ -1,6 +1,6 @@
 <Project Sdk="Dalamud.NET.Sdk/15.0.0">
   <PropertyGroup>
-    <Version>0.2.2.0</Version>
+    <Version>0.2.4.0</Version>
     <Author>Raya Serahill</Author>
     <Name>EspiGamba Helper</Name>
     <Punchline>Create SimpleScratch games from party and alliance dice rolls.</Punchline>
@@ -10,5 +10,19 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ECommons" Version="3.2.1.17" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.7" />
+    <!-- Newer native SQLite than Microsoft.Data.Sqlite 9.0.7 pulls in by itself (fixes GHSA-2m69-gcr7-jv3q). -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
   </ItemGroup>
+  <!--
+    Dalamud resolves a plugin's native libraries from the plugin folder itself, while NuGet drops e_sqlite3.dll under
+    runtimes/win-x64/native/. Copy it next to the plugin and leave out the natives of platforms the game never runs on.
+  -->
+  <Target Name="SqliteNativeToPluginRoot" AfterTargets="CopyFilesToOutputDirectory">
+    <Copy SourceFiles="$(OutDir)runtimes/win-x64/native/e_sqlite3.dll" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" Condition="Exists('$(OutDir)runtimes/win-x64/native/e_sqlite3.dll')" />
+    <ItemGroup>
+      <_UnusedSqliteNative Include="$(OutDir)runtimes/**/*" Exclude="$(OutDir)runtimes/win-x64/**/*" />
+    </ItemGroup>
+    <Delete Files="@(_UnusedSqliteNative)" />
+  </Target>
 </Project>

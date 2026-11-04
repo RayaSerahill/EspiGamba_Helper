@@ -124,7 +124,9 @@ internal sealed class StatsRecorder : IDisposable
                 await ImportSourceAsync("Scratch", ImportScratchAsync),
                 await ImportSourceAsync("Wheel", wheel == null ? null : ImportWheelAsync),
             };
-            LastImportStatus = $"Import finished at {DateTime.Now:HH:mm}. " + string.Join(" | ", parts);
+            // The tab only says it is done; the per-plugin counts go to /xllog.
+            Plugin.Log.Information("Stats import finished: " + string.Join(" | ", parts));
+            LastImportStatus = "Import finished.";
         }
         catch (Exception ex)
         {

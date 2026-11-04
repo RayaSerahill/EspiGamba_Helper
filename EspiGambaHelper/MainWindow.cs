@@ -10,6 +10,7 @@ namespace EspiGambaHelper;
 internal sealed class MainWindow : Window
 {
     private readonly Plugin plugin;
+    private readonly StatsTab statsTab;
     private string vipName = "";
     private string vipWorld = "";
     private string? vipError;
@@ -17,7 +18,8 @@ internal sealed class MainWindow : Window
     public MainWindow(Plugin plugin) : base("EspiGamba Helper###EspiGambaHelper")
     {
         this.plugin = plugin;
-        Size = new Vector2(500, 430);
+        statsTab = new StatsTab(plugin);
+        Size = new Vector2(560, 520);
         SizeCondition = ImGuiCond.FirstUseEver;
         SizeConstraints = new WindowSizeConstraints { MinimumSize = new Vector2(380, 280), MaximumSize = new Vector2(float.MaxValue, float.MaxValue) };
     }
@@ -33,6 +35,11 @@ internal sealed class MainWindow : Window
         if (ImGui.BeginTabItem("VIP"))
         {
             DrawVips();
+            ImGui.EndTabItem();
+        }
+        if (ImGui.BeginTabItem("Stats"))
+        {
+            statsTab.Draw();
             ImGui.EndTabItem();
         }
         ImGui.EndTabBar();
